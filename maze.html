@@ -3,19 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Recursive Maze Solver Visualization</title>
+  <title>Custom Maze Solver</title>
   <style>
     body {
       font-family: Arial, sans-serif;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
+      justify-content: center;
       height: 100vh;
       background-color: #f0f0f0;
     }
     #maze {
       display: grid;
       gap: 2px;
+      margin-top: 20px;
     }
     .cell {
       width: 30px;
@@ -27,135 +29,88 @@
     .path { background-color: green; }
     .start { background-color: blue; }
     .end { background-color: red; }
-    button {
-      margin-top: 20px;
-      padding: 10px 20px;
-      cursor: pointer;
+    button, input {
+      margin: 5px;
+      padding: 10px;
     }
   </style>
 </head>
 <body>
 
-<div>
-  <div id="maze"></div>
-  <button onclick="startSolving()">Solve Maze</button>
-</div>
+<input type="number" id="rows" placeholder="Rows" min="5" value="10">
+<input type="number" id="cols" placeholder="Columns" min="5" value="10">
+<button onclick="generateMaze()">Generate Maze</button>
+<button onclick="startSolving()">Solve Maze</button>
+<div id="maze"></div>
 
 <script>
-  const mazeData = [
-    [0, 1, 0, 0, 0],
-    [0, 1, 0, 1, 0],
-    [0, 0, 0, 1, 0],
-    [1, 1, 1, 1, 0],
-    [0, 0, 0, 0, 0]
-  ];
+  let numRows, numCols, mazeData, cells, visited, path;
+  const directions = [[0, 1], [1, 0], [0, -1], [-1, 0]];
 
-  const numRows = mazeData.length;
-  const numCols = mazeData[0].length;
-  const mazeElement = document.getElementById("maze");
-  mazeElement.style.gridTemplateColumns = `repeat(${numCols}, 30px)`;
+  function generateMaze() {
+    numRows = parseInt(document.getElementById("rows").value);
+    numCols = parseInt(document.getElementById("cols").value);
+    mazeData = Array.from({ length: numRows }, () => Array(numCols).fill(1));
+    visited = Array.from({ length: numRows }, () => Array(numCols).fill(false));
+    path = [];
+    createPath(0, 0);
+    renderMaze();
+  }
 
-  const cells = [];
+  function createPath(row, col) {
+    mazeData[row][col] = 0;
+    let shuffledDirs = [...directions].sort(() => Math.random() - 0.5);
+    for (const [dRow, dCol] of shuffledDirs) {
+      const nextRow = row + dRow * 2;
+      const nextCol = col + dCol * 2;
+      if (nextRow >= 0 && nextRow < numRows && nextCol >= 0 && nextCol < numCols && mazeData[nextRow][nextCol] === 1) {
+        mazeData[row + dRow][col + dCol] = 0;
+        createPath(nextRow, nextCol);
+      }
+    }
+    mazeData[numRows - 1][numCols - 1] = 0;
+  }
 
-  // Initialize the maze grid
-  function createMaze() {
+  function renderMaze() {
+    const mazeElement = document.getElementById("maze");
     mazeElement.innerHTML = '';
+    mazeElement.style.gridTemplateColumns = `repeat(${numCols}, 30px)`;
+    cells = [];
     for (let row = 0; row < numRows; row++) {
       cells[row] = [];
       for (let col = 0; col < numCols; col++) {
         const cell = document.createElement("div");
         cell.classList.add("cell");
-        if (mazeData[row][col] === 1) {
-          cell.classList.add("wall");
-        }
-        if (row === 0 && col === 0) {
-          cell.classList.add("start");
-        }
-        if (row === numRows - 1 && col === numCols - 1) {
-          cell.classList.add("end");
-        }
+        if (mazeData[row][col] === 1) cell.classList.add("wall");
+        if (row === 0 && col === 0) cell.classList.add("start");
+        if (row === numRows - 1 && col === numCols - 1) cell.classList.add("end");
         mazeElement.appendChild(cell);
         cells[row][col] = cell;
       }
     }
   }
 
-  const visited = Array.from({ length: numRows }, () => Array(numCols).fill(false));
-  const path = [];
-  const directions = [
-    [0, 1],  // right
-    [1, 0],  // down
-    [0, -1], // left
-    [-1, 0]  // up
-  ];
+  async function solveMaze(row = 0, col = 0) {
+    if (row === numRows - 1 && col === numCols - 1) return true;
+    if (row < 0 || row >= numRows || col < 0 || col >= numCols || mazeData[row][col] === 1 || visited[row][col]) return false;
+    visited[row][col] = true;
+    path.push([row, col]);
+    cells[row][col].classList.add("path");
+    await new Promise(res => setTimeout(res, 100));
 
-  function isValidMove(row, col) {
-    return (
-      row >= 0 &&
-      row < numRows &&
-      col >= 0 &&
-      col < numCols &&
-      mazeData[row][col] === 0 &&
-      !visited[row][col]
-    );
-  }
-
-  async function solveMaze(row, col) {
-    if (row === numRows - 1 && col === numCols - 1) {
-      path.push([row, col]);
-      markPath(row, col);
-      return true;
+    for (const [dRow, dCol] of directions) {
+      if (await solveMaze(row + dRow, col + dCol)) return true;
     }
 
-    if (isValidMove(row, col)) {
-      visited[row][col] = true;
-      path.push([row, col]);
-      markPath(row, col);
-
-      for (const [dRow, dCol] of directions) {
-        const nextRow = row + dRow;
-        const nextCol = col + dCol;
-        if (await solveMaze(nextRow, nextCol)) {
-          return true;
-        }
-      }
-
-      // Backtracking
-      path.pop();
-      await unmarkPath(row, col);
-    }
-
+    path.pop();
+    cells[row][col].classList.remove("path");
     return false;
   }
 
-  function markPath(row, col) {
-    return new Promise(resolve => {
-      setTimeout(() => {
-        if (!(row === 0 && col === 0) && !(row === numRows - 1 && col === numCols - 1)) {
-          cells[row][col].classList.add("path");
-        }
-        resolve();
-      }, 200);
-    });
-  }
-
-  function unmarkPath(row, col) {
-    return new Promise(resolve => {
-      setTimeout(() => {
-        if (!(row === 0 && col === 0) && !(row === numRows - 1 && col === numCols - 1)) {
-          cells[row][col].classList.remove("path");
-        }
-        resolve();
-      }, 200);
-    });
-  }
-
   async function startSolving() {
-    await solveMaze(0, 0);
+    visited = Array.from({ length: numRows }, () => Array(numCols).fill(false));
+    await solveMaze();
   }
-
-  // Initialize the maze on load
-  createMaze();
 </script>
 
 </body>
