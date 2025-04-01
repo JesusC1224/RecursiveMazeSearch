@@ -13,8 +13,6 @@
       justify-content: center;
       height: 100vh;
       background-color: #f0f0f0;
-      background-size: cover;
-      background-position: center;
     }
     #maze {
       display: grid;
@@ -39,29 +37,18 @@
 </head>
 <body>
 
+
 <input type="number" id="rows" placeholder="Rows" min="5" value="10">
 <input type="number" id="cols" placeholder="Columns" min="5" value="10">
 <button onclick="generateMaze()">Generate Maze</button>
 <button onclick="startSolving()">Solve Maze</button>
 <div id="maze"></div>
 
+
 <script>
   let numRows, numCols, mazeData, cells, visited, path, start, end;
   const directions = [[0, 1], [1, 0], [0, -1], [-1, 0]];
 
-  // Array of space images
-  const spaceImages = [
-    "https://www.nasa.gov/sites/default/files/thumbnails/image/space.jpg", // Example space image 1
-    "https://www.nasa.gov/sites/default/files/thumbnails/image/galaxy.jpg", // Example space image 2
-    "https://www.nasa.gov/sites/default/files/thumbnails/image/nebula.jpg", // Example space image 3
-    "https://www.nasa.gov/sites/default/files/thumbnails/image/blackhole.jpg" // Example space image 4
-  ];
-
-  // Function to randomize space background
-  function setRandomBackground() {
-    const randomIndex = Math.floor(Math.random() * spaceImages.length);
-    document.body.style.backgroundImage = `url(${spaceImages[randomIndex]})`;
-  }
 
   function generateMaze() {
     numRows = parseInt(document.getElementById("rows").value);
@@ -69,6 +56,7 @@
     mazeData = Array.from({ length: numRows }, () => Array(numCols).fill(1));
     visited = Array.from({ length: numRows }, () => Array(numCols).fill(false));
     path = [];
+
 
     createPath(0, 0);
    
@@ -79,6 +67,7 @@
    
     renderMaze();
   }
+
 
   function createPath(row, col) {
     mazeData[row][col] = 0;
@@ -92,6 +81,7 @@
       }
     }
   }
+
 
   function renderMaze() {
     const mazeElement = document.getElementById("maze");
@@ -112,10 +102,12 @@
     }
   }
 
+
   async function startSolving() {
     visited = Array.from({ length: numRows }, () => Array(numCols).fill(false));
     await solveMaze();
   }
+
 
   async function solveMaze() {
     let queue = [[...start, []]];
@@ -142,6 +134,7 @@
     }
   }
 
+
   function performBFSToEnd() {
     let queue = [[...start]];
     let visitedTemp = Array.from({ length: numRows }, () => Array(numCols).fill(false));
@@ -163,10 +156,8 @@
     }
     return false;
   }
-
-  // Set the random space background when the page loads
-  setRandomBackground();
 </script>
+
 
 </body>
 </html>
